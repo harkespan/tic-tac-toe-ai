@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Tic Tac Toe vs AI</title>
+    <style>
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            gap: 5px;
+            width: 310px;
+            margin: 20px auto;
+        }
+        .cell {
+            width: 100px;
+            height: 100px;
+            border: 2px solid #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            cursor: pointer;
+        }
+        .cell:hover {
+            background-color: #f0f0f0;
+        }
+        #status {
+            text-align: center;
+            font-size: 24px;
+            margin: 20px;
+        }
+        #reset {
+            display: block;
+            margin: 20px auto;
+            padding: 10px 20px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div id="status">Your turn (X)</div>
+    <div class="board" id="board">
+        <div class="cell" data-index="0"></div>
+        <div class="cell" data-index="1"></div>
+        <div class="cell" data-index="2"></div>
+        <div class="cell" data-index="3"></div>
+        <div class="cell" data-index="4"></div>
+        <div class="cell" data-index="5"></div>
+        <div class="cell" data-index="6"></div>
+        <div class="cell" data-index="7"></div>
+        <div class="cell" data-index="8"></div>
+    </div>
+    <button id="reset">Reset Game</button>
+
+    <script>
+        const board = document.getElementById('board');
+        const cells = document.querySelectorAll('.cell');
+        const status = document.getElementById('status');
+        const resetButton = document.getElementById('reset');
+        let currentPlayer = 'X';
+        let gameBoard = ['', '', '', '', '', '', '', '', ''];
+        let gameActive = true;
+
+        const winningCombinations = [
+            [0, 1, 2], [3, 4, 5], [6, 7, 8], // Rows
+            [0, 3, 6], [1, 4, 7], [2, 5, 8], // Columns
+            [0, 4, 8], [2, 4, 6]             // Diagonals
+        ];
+
+        function handleCellClick(e) {
+            if (currentPlayer !== 'X' || !gameActive) return;
+
+            const cell = e.target;
+            const index = parseInt(cell.getAttribute('data-index'));
+
+            if (gameBoard[index] !== '') return;
+
+            makeMove(index, 'X');
+            if (gameActive) {
+                setTimeout(aiMove, 500); // Small delay for AI move
+            }
+        }
+
+        function makeMove(index, player) {
+            gameBoard[index] = player;
+            cells[index].textContent = player;
+
+            if (checkWin()) {
+                status.textContent = `${player === 'X' ? 'You win!' : 'AI wins!'}`;
+                gameActive = false;
+                return;
+            }
+
+            if (checkDraw()) {
+                status.textContent = "It's a draw!";
+                gameActive = false;
+                return;
+            }
+
+            currentPlayer = player === 'X' ? 'O' : 'X';
+            status.textContent = currentPlayer === 'X' ? 'Your turn (X)' : 'AI is thinking...';
+        }
+
+        function aiMove() {
+            if (!gameActive || currentPlayer !== 'O') return;
+
+            // Check for winning move
+            let move = findBestMove('O');
+            if (move === -1) {
+                // Check for blocking move
+                move = findBestMove('X');
+            }
+            if (move === -1) {
+                // Make random move
+                const availableMoves = gameBoard
+                    .map((cell, index) => cell === '' ? index : null)
+                    .filter(index => index !== null);
+                move = availableMoves[Math.floor(Math.random() * availableMoves.length)];
+            }
+
+            makeMove(move, 'O');
+        }
+
+        function findBestMove(player) {
+            for (let combo of winningCombinations) {
+                const [a, b, c] = combo;
+                const values = [gameBoard[a], gameBoard[b], gameBoard[c]];
+                
+                if (values.filter(val => val === player).length === 2 && 
+                    values.filter(val => val === '').length === 1) {
+                    return combo[values.indexOf('')];
+                }
+            }
+            return -1;
+        }
+
+        function checkWin() {
+            return winningCombinations.some(combination => {
+                return combination.every(index => {
+                    return gameBoard[index] === currentPlayer;
+                });
+            });
+        }
+
+        function checkDraw() {
+            return gameBoard.every(cell => cell !== '');
+        }
+
+        function resetGame() {
+            currentPlayer = 'X';
+            gameBoard = ['', '', '', '', '', '', '', '', ''];
+            gameActive = true;
+            status.textContent = 'Your turn (X)';
+            cells.forEach(cell => {
+                cell.textContent = '';
+            });
+        }
+
+        cells.forEach(cell => {
+            cell.addEventListener('click', handleCellClick);
+        });
+
+        resetButton.addEventListener('click', resetGame);
+    </script>
+</body>
+</html>
